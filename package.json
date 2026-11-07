@@ -1,21 +1,23 @@
-
 {
   "name": "kalkulator-kuliner",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "private": true,
   "description": "Kalkulator Kuliner offline Android app",
   "scripts": {
+    "build:web": "esbuild www/app.js --bundle --format=esm --outfile=www/app.bundle.js",
     "android:add": "cap add android",
     "android:sync": "cap sync android",
     "android:open": "cap open android"
   },
-"dependencies": {
-  "@capacitor/android": "^7.4.3",
-  "@capacitor/core": "^7.4.3",
-  "@capacitor/filesystem": "^7.1.4"
-},
+  "dependencies": {
+    "@capacitor/android": "^7.4.3",
+    "@capacitor/core": "^7.4.3",
+    "@capacitor/filesystem": "^7.1.4",
+    "@capacitor/share": "^7.0.2"
+  },
   "devDependencies": {
     "@capacitor/cli": "^7.4.3",
+    "esbuild": "^0.25.0",
     "typescript": "^5.9.3"
   }
 }
