@@ -9,10 +9,11 @@
     "android:sync": "cap sync android",
     "android:open": "cap open android"
   },
-  "dependencies": {
-    "@capacitor/android": "^7.4.3",
-    "@capacitor/core": "^7.4.3"
-  },
+"dependencies": {
+  "@capacitor/android": "^7.4.3",
+  "@capacitor/core": "^7.4.3",
+  "@capacitor/filesystem": "^7.1.4"
+},
   "devDependencies": {
     "@capacitor/cli": "^7.4.3",
     "typescript": "^5.9.3"
