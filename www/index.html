@@ -75,7 +75,28 @@ function renderReports(){let inc=sum('in'),out=sum('out');$('reportStats').inner
 ['bepPrice','bepVar','bepFixed'].forEach(x=>$(x).oninput=renderReports);
 function backupStatus(){let s=localStorage.getItem(SNAP);$('backupStatus').innerHTML=s?`<b>Backup internal otomatis aktif</b><br>Terakhir diperbarui: ${new Date(JSON.parse(s).createdAt).toLocaleString('id-ID')}<br>${db.stocks.length} bahan · ${db.recipes.length} resep · ${db.transactions.length} transaksi`:'Belum ada snapshot backup.'}
 function render(){renderHome();renderStock();renderRecipe();refreshIngredientOptions();$('prRecipe').innerHTML='<option value="">Pilih resep</option>'+db.recipes.map(r=>`<option value="${r.id}">${safe(r.name)}</option>`).join('');$('productionList').innerHTML=db.productions.length?[...db.productions].reverse().map(p=>`<div class="item row"><div><b>${safe(p.recipeName)}</b><small>${p.date} · ${p.batch} batch · ${p.units} unit</small></div><b>${money(p.cost)}</b></div>`).join(''):none('Belum ada produksi.');renderProducts();renderFinance();renderReports();preview()}
-function download(text,name){let u=URL.createObjectURL(new Blob([text],{type:'application/json'})),a=document.createElement('a');a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),1500)}
+async function download(text,name){
+  try {
+    const FS = window.Capacitor.registerPlugin('Filesystem');
+
+    if (!FS) {
+      toast('Filesystem belum terhubung.');
+      return;
+    }
+
+    await FS.writeFile({
+      path: name,
+      data: text,
+      directory: 'DOCUMENTS',
+      encoding: 'utf8',
+      recursive: true
+    });
+
+    toast('Backup berhasil disimpan ke Dokumen.');
+  } catch (e) {
+    toast('Gagal menyimpan backup: ' + e.message);
+  }
+}
 $('downloadBackup').onclick=()=>{download(JSON.stringify(snap(),null,2),`backup-kalkulator-kuliner-${today()}.json`);toast('File JSON siap disimpan.')};
 $('copyBackup').onclick=async()=>{let t=JSON.stringify(snap(),null,2);try{await navigator.clipboard.writeText(t);toast('JSON disalin.')}catch(e){toast('Clipboard tidak diizinkan browser. Gunakan Unduh backup.')}}
 $('restoreBackup').onclick=async()=>{let f=$('restoreFile').files[0];if(!f)return toast('Pilih file JSON.');if(!confirm('Data saat ini akan diganti. Lanjutkan?'))return;try{let o=JSON.parse((await f.text()).replace(/^\\uFEFF/,'').trim());if(typeof o==='string')o=JSON.parse(o);let d=o.data||o;if(!['stocks','recipes','productions','products','transactions','movements'].every(k=>Array.isArray(d[k])))throw Error();db={...empty(),...d};save();go('home');toast('Data berhasil dipulihkan.')}catch(e){toast('File JSON tidak valid atau rusak.')}}
