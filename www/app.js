@@ -101,3 +101,101 @@ $('downloadBackup').onclick=()=>download(JSON.stringify(snap(),null,2),`backup-k
 $('copyBackup').onclick=async()=>{let t=JSON.stringify(snap(),null,2);try{await navigator.clipboard.writeText(t);toast('JSON disalin.')}catch(e){toast('Clipboard tidak diizinkan browser. Gunakan Unduh backup.')}}
 $('restoreBackup').onclick=async()=>{let f=$('restoreFile').files[0];if(!f)return toast('Pilih file JSON.');if(!confirm('Data saat ini akan diganti. Lanjutkan?'))return;try{let o=JSON.parse((await f.text()).replace(/^\\uFEFF/,'').trim());if(typeof o==='string')o=JSON.parse(o);let d=o.data||o;if(!['stocks','recipes','productions','products','transactions','movements'].every(k=>Array.isArray(d[k])))throw Error();db={...empty(),...d};save();go('home');toast('Data berhasil dipulihkan.')}catch(e){toast('File JSON tidak valid atau rusak.')}}
 $('prDate').value=today();$('fnDate').value=today();drawCosts();addIng();render();backupStatus();
+// FITUR EDIT DAN HAPUS STOK
+function editStock(stockId) {
+  const s = db.stocks.find(x => x.id === stockId);
+  if (!s) return;
+
+  const name = prompt('Nama bahan:', s.name);
+  if (name === null) return;
+
+  const price = prompt('Harga per ' + s.unit + ' (Rp):', s.price);
+  if (price === null) return;
+
+  const min = prompt('Stok minimum:', s.min);
+  if (min === null) return;
+
+  const newPrice = Number(price);
+  const newMin = Number(min);
+
+  if (!name.trim() || !Number.isFinite(newPrice) ||
+      newPrice < 0 || !Number.isFinite(newMin) || newMin < 0) {
+    return toast('Data edit tidak valid.');
+  }
+
+  if (db.stocks.some(x =>
+    x.id !== stockId &&
+    x.name.toLowerCase() === name.trim().toLowerCase() &&
+    x.unit === s.unit
+  )) {
+    return toast('Nama bahan tersebut sudah ada.');
+  }
+
+  s.name = name.trim();
+  s.price = newPrice;
+  s.min = newMin;
+
+  save();
+  toast('Data bahan berhasil diperbarui.');
+}
+
+function deleteStock(stockId) {
+  const s = db.stocks.find(x => x.id === stockId);
+  if (!s) return;
+
+  if (db.recipes.some(r =>
+    r.ingredients.some(i => i.stockId === stockId)
+  )) {
+    return toast('Bahan masih digunakan dalam resep.');
+  }
+
+  if (!confirm('Hapus bahan ' + s.name + '?')) return;
+
+  db.stocks = db.stocks.filter(x => x.id !== stockId);
+  save();
+  toast('Bahan berhasil dihapus.');
+}
+
+function renderStock() {
+  $('adjItem').innerHTML = db.stocks.map(s =>
+    `<option value="${s.id}">${safe(s.name)} (${s.qty} ${s.unit})</option>`
+  ).join('');
+
+  $('stockList').innerHTML = db.stocks.length
+    ? db.stocks.map(s => `
+      <div class="item">
+        <div class="row">
+          <div>
+            <b>${safe(s.name)}</b>
+            <small>${s.qty} ${s.unit} · batas ${s.min} · ${money(s.price)}/${s.unit}</small>
+          </div>
+          <b>${money(s.qty * s.price)}</b>
+        </div>
+        <div class="btnrow">
+          <button class="btn light" data-edit-stock="${s.id}">Edit</button>
+          <button class="btn red" data-delete-stock="${s.id}">Hapus</button>
+        </div>
+      </div>
+    `).join('')
+    : none('Belum ada bahan.');
+
+  document.querySelectorAll('[data-edit-stock]').forEach(b => {
+    b.onclick = () => editStock(b.dataset.editStock);
+  });
+
+  document.querySelectorAll('[data-delete-stock]').forEach(b => {
+    b.onclick = () => deleteStock(b.dataset.deleteStock);
+  });
+
+  $('stockHistory').innerHTML = db.movements.length
+    ? [...db.movements].reverse().slice(0, 30).map(m => `
+      <div class="item row">
+        <div>
+          <b>${safe(m.name)}</b>
+          <small>${m.date} · ${safe(m.note)}</small>
+        </div>
+        <b>${m.delta > 0 ? '+' : ''}${m.delta} ${m.unit}</b>
+      </div>
+    `).join('')
+    : none('Belum ada riwayat stok.');
+}
