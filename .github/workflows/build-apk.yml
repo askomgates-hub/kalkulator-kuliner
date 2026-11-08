@@ -4,9 +4,9 @@ name: Build Kalkulator Kuliner APK
 on:
   workflow_dispatch:
   push:
-  branches:
-    - main
-    - v0.5.0-ui-review
+    branches:
+      - main
+      - v0.5.0-ui-review
 
 permissions:
   contents: read
