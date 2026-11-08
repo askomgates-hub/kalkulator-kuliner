@@ -4,7 +4,96 @@
 body{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}nav{overflow-x:auto;overflow-y:hidden;scrollbar-width:none;-webkit-overflow-scrolling:touch;scroll-snap-type:x proximity}
 nav::-webkit-scrollbar{display:none}
 nav button{flex:0 0 auto;scroll-snap-align:start}.stat{display:flex;flex-direction:column;justify-content:space-between;min-height:94px}
-.stat small{display:block;min-height:30px;line-height:1.35}</style></head><body>
+.stat small{display:block;min-height:30px;line-height:1.35}/* Penyempurnaan tampilan mobile */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+header {
+  padding: 28px 20px;
+  border-radius: 0 0 28px 28px;
+}
+
+header h1 {
+  font-size: 30px;
+  line-height: 1.2;
+  margin: 10px 0;
+}
+
+header p {
+  font-size: 16px;
+  opacity: .9;
+}
+
+nav {
+  padding: 12px;
+  gap: 8px;
+}
+
+nav button {
+  min-height: 46px;
+  padding: 0 18px;
+  font-weight: 700;
+}
+
+main {
+  padding: 18px 14px;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.stat,
+.card {
+  border-radius: 18px;
+  padding: 16px;
+}
+
+.stat {
+  min-height: 105px;
+}
+
+.card {
+  margin-bottom: 14px;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button {
+  min-height: 44px;
+  cursor: pointer;
+}
+
+input,
+select {
+  width: 100%;
+  min-height: 46px;
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+@media (min-width: 700px) {
+  main {
+    max-width: 900px;
+    margin: auto;
+  }
+
+  .stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}</style></head><body>
 <header><small>ASISTEN USAHA UMKM</small><h1>Kalkulator Kuliner</h1><p>Kelola HPP, stok, resep, produksi dan keuangan.</p></header>
 <nav id="nav"><button class="on" data-tab="home">Ringkasan</button><button data-tab="hpp">HPP</button><button data-tab="stock">Stok</button><button data-tab="recipe">Resep</button><button data-tab="production">Produksi</button><button data-tab="products">Produk</button><button data-tab="finance">Keuangan</button><button data-tab="reports">Laporan</button><button data-tab="backup">Pusat Backup</button></nav><main>
 <section id="home" class="page on"><h2>Ringkasan usaha</h2><p class="sub">Pantau kondisi usaha kuliner.</p><div id="homeStats" class="stats"></div><div class="card"><h3>Akses cepat</h3><div class="grid"><button class="btn light" data-go="stock">＋ Tambah stok</button><button class="btn light" data-go="recipe">＋ Buat resep</button><button class="btn light" data-go="production">Catat produksi</button><button class="btn light" data-go="finance">Catat transaksi</button></div></div><div class="card"><h3>Stok menipis</h3><div id="low"></div></div><div class="card"><h3>Aktivitas terakhir</h3><div id="activity"></div></div></section>
