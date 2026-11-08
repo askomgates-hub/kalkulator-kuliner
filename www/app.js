@@ -62,7 +62,7 @@ function renderFinance(){$('financeList').innerHTML=db.transactions.length?[...d
 function renderReports(){let inc=sum('in'),out=sum('out');$('reportStats').innerHTML=[['Pemasukan',money(inc)],['Pengeluaran',money(out)],['Selisih kas',money(inc-out)]].map(x=>`<div class="stat"><small>${x[0]}</small><b>${x[1]}</b></div>`).join('');let p=val('bepPrice'),v=val('bepVar'),f=val('bepFixed'),u=p>v?Math.ceil(f/(p-v)):0;$('bepUnits').textContent=u.toLocaleString('id-ID')+' unit';$('bepTurn').textContent='Omzet BEP '+money(u*p);$('reportMore').innerHTML=`Bahan: <b>${db.stocks.length}</b><br>Resep: <b>${db.recipes.length}</b><br>Produk: <b>${db.products.length}</b><br>Total hasil produksi: <b>${db.productions.reduce((a,p)=>a+p.units,0)} unit</b>`}
 ['bepPrice','bepVar','bepFixed'].forEach(x=>$(x).oninput=renderReports);
 function backupStatus(){let s=localStorage.getItem(SNAP);$('backupStatus').innerHTML=s?`<b>Backup internal otomatis aktif</b><br>Terakhir diperbarui: ${new Date(JSON.parse(s).createdAt).toLocaleString('id-ID')}<br>${db.stocks.length} bahan · ${db.recipes.length} resep · ${db.transactions.length} transaksi`:'Belum ada snapshot backup.'}
-function render(){renderHome();renderStock();renderRecipe();refreshIngredientOptions();$('prRecipe').innerHTML='<option value="">Pilih resep</option>'+db.recipes.map(r=>`<option value="${r.id}">${safe(r.name)}</option>`).join('');$('productionList').innerHTML=db.productions.length?[...db.productions].reverse().map(p=>`<div class="item row"><div><b>${safe(p.recipeName)}</b><small>${p.date} · ${p.batch} batch · ${p.units} unit</small></div><b>${money(p.cost)}</b></div>`).join(''):none('Belum ada produksi.');renderProducts();renderFinance();renderReports();preview()}
+function render(){renderHome();renderStockNew();renderRecipe();refreshIngredientOptions();$('prRecipe').innerHTML='<option value="">Pilih resep</option>'+db.recipes.map(r=>`<option value="${r.id}">${safe(r.name)}</option>`).join('');$('productionList').innerHTML=db.productions.length?[...db.productions].reverse().map(p=>`<div class="item row"><div><b>${safe(p.recipeName)}</b><small>${p.date} · ${p.batch} batch · ${p.units} unit</small></div><b>${money(p.cost)}</b></div>`).join(''):none('Belum ada produksi.');renderProducts();renderFinance();renderReports();preview()}
 async function download(text,name){
   try {
     if (Capacitor.isNativePlatform()) {
@@ -156,7 +156,7 @@ function deleteStock(stockId) {
   toast('Bahan berhasil dihapus.');
 }
 
-function renderStock() {
+function renderStockNew() {
   $('adjItem').innerHTML = db.stocks.map(s =>
     `<option value="${s.id}">${safe(s.name)} (${s.qty} ${s.unit})</option>`
   ).join('');
