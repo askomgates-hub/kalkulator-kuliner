@@ -5,8 +5,7 @@ import { StatusBar, Style } from '@capacitor/status-bar';
 
 'use strict';
 if (Capacitor.isNativePlatform()) {
-  StatusBar.setOverlaysWebView({ overlay: false });
-  StatusBar.setBackgroundColor({ color: '#17483d' });
+  StatusBar.setOverlaysWebView({ overlay: true });
   StatusBar.setStyle({ style: Style.Dark });
 }
 const $=id=>document.getElementById(id),KEY='kk_v04_db',SNAP='kk_v04_snapshot';
