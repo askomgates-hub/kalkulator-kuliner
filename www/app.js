@@ -26,7 +26,41 @@ let costs=[['Bahan baku',0],['Kemasan',0],['Tenaga kerja',0],['Biaya lain',0]];
 function drawCosts(){$('costRows').innerHTML=costs.map((c,i)=>`<div class="grid cost" style="grid-template-columns:1fr 1fr auto;align-items:end"><div class="field"><label>Komponen</label><input data-cn="${i}" value="${safe(c[0])}"></div><div class="field"><label>Biaya (Rp)</label><input data-cv="${i}" type="number" min="0" value="${c[1]}"></div><button class="btn red" data-cd="${i}">Hapus</button></div>`).join('');document.querySelectorAll('[data-cn]').forEach(e=>e.oninput=()=>{costs[+e.dataset.cn][0]=e.value;calcHpp()});document.querySelectorAll('[data-cv]').forEach(e=>e.oninput=()=>{costs[+e.dataset.cv][1]=+e.value||0;calcHpp()});document.querySelectorAll('[data-cd]').forEach(e=>e.onclick=()=>{costs.splice(+e.dataset.cd,1);drawCosts();calcHpp()})}
 function calcHpp(){let total=costs.reduce((a,c)=>a+c[1],0),y=val('hpYield'),m=val('hpMargin'),unit=y?total/y:0,price=m>=0&&m<100?unit/(1-m/100):0;$('hpUnit').textContent=money(unit);$('hpPrice').textContent=money(price);return {total,y,m,unit,price}}
 $('addCost').onclick=()=>{costs.push(['Komponen baru',0]);drawCosts();calcHpp()};['hpYield','hpMargin'].forEach(x=>$(x).oninput=calcHpp);
-$('saveProduct').onclick=()=>{let c=calcHpp(),name=$('hpName').value.trim();if(!name||c.y<1||c.total<=0||c.m<0||c.m>=100)return toast('Lengkapi nama, hasil, biaya dan margin 0–99,9%.');db.products.push({id:id(),name,yield:c.y,total:c.total,hpp:c.unit,margin:c.m,price:c.price});save();toast('Produk disimpan.');go('products')};
+$('saveProduct').onclick=()=>{
+  let c=calcHpp(),name=$('hpName').value.trim();
+  let invalidCost=costs.some(x=>
+    !String(x[0]).trim() ||
+    !Number.isFinite(Number(x[1])) ||
+    Number(x[1])<0
+  );
+
+  if(
+    !name ||
+    !Number.isInteger(c.y) ||
+    c.y<1 ||
+    invalidCost ||
+    !Number.isFinite(c.total) ||
+    c.total<=0 ||
+    c.m<0 ||
+    c.m>=100
+  ){
+    return toast('Periksa nama, hasil, biaya dan margin 0–99,9%.');
+  }
+
+  db.products.push({
+    id:id(),
+    name,
+    yield:c.y,
+    total:c.total,
+    hpp:c.unit,
+    margin:c.m,
+    price:c.price
+  });
+
+  save();
+  toast('Produk disimpan.');
+  go('products');
+};
 function move(s,d,n,date=today()){db.movements.push({name:s.name,unit:s.unit,delta:d,note:n,date})}
 function renderStock(){$('adjItem').innerHTML=db.stocks.map(s=>`<option value="${s.id}">${safe(s.name)} (${s.qty} ${s.unit})</option>`).join('');$('stockList').innerHTML=db.stocks.length?db.stocks.map(s=>`<div class="item row"><div><b>${safe(s.name)}</b><small>${s.qty} ${s.unit} · batas ${s.min} · ${money(s.price)}/${s.unit}</small></div><b>${money(s.qty*s.price)}</b></div>`).join(''):none('Belum ada bahan.');$('stockHistory').innerHTML=db.movements.length?[...db.movements].reverse().slice(0,30).map(m=>`<div class="item row"><div><b>${safe(m.name)}</b><small>${m.date} · ${safe(m.note)}</small></div><b>${m.delta>0?'+':''}${m.delta} ${m.unit}</b></div>`).join(''):none('Belum ada riwayat stok.')}
 $('saveStock').onclick=()=>{let name=$('stName').value.trim(),unit=$('stUnit').value,q=val('stQty'),price=val('stPrice'),min=val('stMin');if(!name||q<0||price<0||min<0)return toast('Periksa data bahan.');let s=db.stocks.find(x=>x.name.toLowerCase()===name.toLowerCase()&&x.unit===unit);if(s){s.qty+=q;s.price=price;s.min=min}else{s={id:id(),name,unit,qty:q,price,min};db.stocks.push(s)}move(s,q,'Stok masuk/awal');refreshIngredientOptions();save();$('stName').value=$('stQty').value=$('stPrice').value=$('stMin').value='';toast('Stok tersimpan.')};
