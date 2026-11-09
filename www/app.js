@@ -5,6 +5,7 @@ import { StatusBar, Style } from '@capacitor/status-bar';
 
 'use strict';
 if (Capacitor.isNativePlatform()) {
+  StatusBar.setOverlaysWebView({ overlay: false });
   StatusBar.setBackgroundColor({ color: '#17483d' });
   StatusBar.setStyle({ style: Style.Light });
 }
