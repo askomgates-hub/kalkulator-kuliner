@@ -316,17 +316,25 @@ function editStock(stockId) {
   const name = prompt('Nama bahan:', s.name);
   if (name === null) return;
 
+  const qty = prompt('Jumlah stok (' + s.unit + '):', s.qty);
+  if (qty === null) return;
+
   const price = prompt('Harga per ' + s.unit + ' (Rp):', s.price);
   if (price === null) return;
 
   const min = prompt('Stok minimum:', s.min);
   if (min === null) return;
 
+  const newQty = Number(qty);
   const newPrice = Number(price);
   const newMin = Number(min);
 
-  if (!name.trim() || !Number.isFinite(newPrice) ||
-      newPrice < 0 || !Number.isFinite(newMin) || newMin < 0) {
+  if (
+    !name.trim() ||
+    !Number.isFinite(newQty) || newQty < 0 ||
+    !Number.isFinite(newPrice) || newPrice < 0 ||
+    !Number.isFinite(newMin) || newMin < 0
+  ) {
     return toast('Data edit tidak valid.');
   }
 
@@ -338,9 +346,16 @@ function editStock(stockId) {
     return toast('Nama bahan tersebut sudah ada.');
   }
 
+  const delta = newQty - s.qty;
+
   s.name = name.trim();
+  s.qty = newQty;
   s.price = newPrice;
   s.min = newMin;
+
+  if (delta !== 0) {
+    move(s, delta, 'Penyesuaian jumlah melalui edit');
+  }
 
   save();
   toast('Data bahan berhasil diperbarui.');
