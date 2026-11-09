@@ -363,27 +363,47 @@ function deleteStock(stockId) {
   toast('Bahan berhasil dihapus.');
 }
 
+
 function renderStockNew() {
   $('adjItem').innerHTML = db.stocks.map(s =>
     `<option value="${s.id}">${safe(s.name)} (${s.qty} ${s.unit})</option>`
   ).join('');
 
   $('stockList').innerHTML = db.stocks.length
-    ? db.stocks.map(s => `
-      <div class="item">
-        <div class="row">
-          <div>
-            <b>${safe(s.name)}</b>
-            <small>${s.qty} ${s.unit} · batas ${s.min} · ${money(s.price)}/${s.unit}</small>
+    ? db.stocks.map(s => {
+      const low = Number(s.qty) <= Number(s.min);
+
+      return `
+        <div class="item">
+          <div class="row">
+            <div>
+              <b>${safe(s.name)}</b>
+              <small>
+                ${s.qty} ${s.unit} · batas ${s.min} ·
+                ${money(s.price)}/${s.unit}
+              </small>
+              ${low ? `
+                <div style="
+                  display:inline-block;
+                  margin-top:8px;
+                  padding:6px 12px;
+                  border-radius:20px;
+                  background:#fff0e9;
+                  color:#a34b35;
+                  font-size:13px;
+                  font-weight:700;
+                ">⚠ Stok Menipis</div>
+              ` : ''}
+            </div>
+            <b>${money(s.qty * s.price)}</b>
           </div>
-          <b>${money(s.qty * s.price)}</b>
+          <div class="btnrow">
+            <button class="btn light" data-edit-stock="${s.id}">Edit</button>
+            <button class="btn red" data-delete-stock="${s.id}">Hapus</button>
+          </div>
         </div>
-        <div class="btnrow">
-          <button class="btn light" data-edit-stock="${s.id}">Edit</button>
-          <button class="btn red" data-delete-stock="${s.id}">Hapus</button>
-        </div>
-      </div>
-    `).join('')
+      `;
+    }).join('')
     : none('Belum ada bahan.');
 
   document.querySelectorAll('[data-edit-stock]').forEach(b => {
@@ -406,3 +426,4 @@ function renderStockNew() {
     `).join('')
     : none('Belum ada riwayat stok.');
 }
+
