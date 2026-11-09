@@ -167,6 +167,10 @@ function editRecipe(recipeId) {
     const row = $('recipeRows').lastElementChild;
     row.querySelector('.iid').value = i.stockId;
     row.querySelector('.iq').value = i.qty;
+    
+    const selectedStock = db.stocks.find(s => s.id === i.stockId);
+  row.querySelector('label span').textContent =
+    selectedStock ? selectedStock.unit : 'unit';
   });
 
   calcRecipe();
