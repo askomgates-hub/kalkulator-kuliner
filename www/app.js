@@ -60,7 +60,66 @@ $('saveRecipe').onclick=()=>{let name=$('rcName').value.trim(),y=val('rcYield'),
 function renderRecipe(){$('recipeList').innerHTML=db.recipes.length?db.recipes.map(r=>`<div class="item"><b>${safe(r.name)}</b><small>${r.yield} unit/batch · ${money(costOf(r.ingredients))}/batch</small></div>`).join(''):none('Belum ada resep.')}
 function preview(){let r=db.recipes.find(r=>r.id===$('prRecipe').value),b=val('prBatch');if(!r){$('prPreview').textContent='Pilih resep untuk melihat kebutuhan bahan.';return}let lines=[],ok=true,c=0;let req={};r.ingredients.forEach(i=>req[i.stockId]=(req[i.stockId]||0)+i.qty*b);Object.entries(req).forEach(([sid,q])=>{let s=db.stocks.find(s=>s.id===sid);if(!s||s.qty<q)ok=false;if(s){c+=s.price*q;lines.push(`${safe(s.name)}: ${q} ${s.unit} (tersedia ${s.qty})`)}});$('prPreview').innerHTML='<b>Kebutuhan bahan:</b><br>'+lines.join('<br>')+`<br><br>Hasil: <b>${r.yield*b} unit</b><br>Biaya bahan: <b>${money(c)}</b><br>Status stok: <b>${ok?'Mencukupi':'Tidak mencukupi'}</b>`}
 $('prRecipe').onchange=preview;$('prBatch').oninput=preview;
-$('saveProduction').onclick=()=>{let r=db.recipes.find(r=>r.id===$('prRecipe').value),b=val('prBatch'),date=$('prDate').value||today();if(!r||b<1)return toast('Pilih resep dan jumlah batch.');let req={};r.ingredients.forEach(i=>req[i.stockId]=(req[i.stockId]||0)+i.qty*b);for(let [sid,q] of Object.entries(req)){let s=db.stocks.find(s=>s.id===sid);if(!s||s.qty<q)return toast('Stok tidak mencukupi. Produksi dibatalkan.')}let c=0;for(let [sid,q] of Object.entries(req)){let s=db.stocks.find(s=>s.id===sid);s.qty-=q;c+=s.price*q;move(s,-q,'Produksi '+r.name,date)}db.productions.push({recipeName:r.name,batch:b,units:r.yield*b,cost:c,date});save();toast('Produksi dicatat; stok dikurangi.')};
+$('saveProduction').onclick = () => {
+  let r = db.recipes.find(x => x.id === $('prRecipe').value);
+  let b = val('prBatch');
+  let date = $('prDate').value || today();
+
+  if (!r || b < 1 || !Number.isInteger(b)) {
+    return toast('Pilih resep dan jumlah batch yang valid.');
+  }
+
+  let req = {};
+
+  r.ingredients.forEach(i => {
+    req[i.stockId] = (req[i.stockId] || 0) + i.qty * b;
+  });
+
+  for (let [id, q] of Object.entries(req)) {
+    let s = db.stocks.find(x => x.id === id);
+
+    if (!s || s.qty < q) {
+      return toast('Stok tidak mencukupi. Produksi dibatalkan.');
+    }
+  }
+
+  let details = r.ingredients.map(i => {
+    let s = db.stocks.find(x => x.id === i.stockId);
+
+    return {
+      stockId: i.stockId,
+      name: s.name,
+      unit: s.unit,
+      qtyPerBatch: i.qty,
+      totalQty: i.qty * b,
+      price: s.price,
+      cost: i.qty * b * s.price
+    };
+  });
+
+  let c = 0;
+
+  for (let [id, q] of Object.entries(req)) {
+    let s = db.stocks.find(x => x.id === id);
+    c += s.price * q;
+    s.qty -= q;
+    move(s, -q, 'Produksi ' + r.name, date);
+  }
+
+  db.productions.push({
+    id: id(),
+    recipeId: r.id,
+    recipeName: r.name,
+    batch: b,
+    units: r.yield * b,
+    cost: c,
+    date: date,
+    ingredients: details
+  });
+
+  save();
+  toast('Produksi dicatat; stok dikurangi.');
+};
 function renderProducts(){$('productList').innerHTML=db.products.length?db.products.map(p=>`<div class="item"><div class="row"><b>${safe(p.name)}</b><b>${money(p.price)}</b></div><small>HPP/unit ${money(p.hpp)} · ${p.yield} unit · margin ${p.margin}%</small></div>`).join(''):none('Belum ada produk. Hitung HPP lalu simpan sebagai produk.')}
 $('saveFinance').onclick=()=>{let amount=val('fnAmount'),note=$('fnNote').value.trim();if(amount<=0||!note)return toast('Isi keterangan dan jumlah.');db.transactions.push({type:$('fnType').value,amount,note,date:$('fnDate').value||today()});save();$('fnNote').value=$('fnAmount').value='';toast('Transaksi tersimpan.')};
 
