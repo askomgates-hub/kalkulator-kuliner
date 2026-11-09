@@ -200,11 +200,28 @@ function renderFinance() {
       const date = prompt('Tanggal (YYYY-MM-DD):', t.date);
       if (date === null) return;
 
-      if (!note.trim() || Number(amount) <= 0 ||
-          !Number.isFinite(Number(amount)) ||
-          !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-        return toast('Data transaksi tidak valid.');
-      }
+const parts = date.split('-').map(Number);
+const year = parts[0];
+const month = parts[1];
+const day = parts[2];
+
+const parsedDate = new Date(year, month - 1, day);
+
+const validDate =
+  /^\d{4}-\d{2}-\d{2}$/.test(date) &&
+  year >= 1900 &&
+  parsedDate.getFullYear() === year &&
+  parsedDate.getMonth() === month - 1 &&
+  parsedDate.getDate() === day;
+
+if (
+  !note.trim() ||
+  Number(amount) <= 0 ||
+  !Number.isFinite(Number(amount)) ||
+  !validDate
+) {
+  return toast('Data transaksi tidak valid.');
+}
 
       t.note = note.trim();
       t.amount = Number(amount);
