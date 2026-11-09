@@ -10,7 +10,7 @@ const empty=()=>({stocks:[],recipes:[],productions:[],products:[],transactions:[
 let db=(()=>{try{return {...empty(),...JSON.parse(localStorage.getItem(KEY)||'{}')}}catch(e){return empty()}})();
 const val=id=>Number($(id).value)||0;
 function toast(s){let t=$('toast');t.textContent=s;t.style.display='block';clearTimeout(window.tt);window.tt=setTimeout(()=>t.style.display='none',2600)}
-function snap(){return {app:'Kalkulator Kuliner',version:'0.4',createdAt:new Date().toISOString(),data:db}}
+function snap(){return {app:'Kalkulator Kuliner',version:'0.5.1',createdAt:new Date().toISOString(),data:db}}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(db));localStorage.setItem(SNAP,JSON.stringify(snap()));render();backupStatus()}catch(e){toast('Penyimpanan browser penuh. Segera unduh backup.')}}
 function go(tab){document.querySelectorAll('.page').forEach(x=>x.classList.toggle('on',x.id===tab));document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x.dataset.tab===tab));document.querySelector(`nav [data-tab="${tab}"]`)?.scrollIntoView({inline:'center',block:'nearest'});render()}
 document.querySelectorAll('[data-tab]').forEach(x=>x.onclick=()=>go(x.dataset.tab));document.querySelectorAll('[data-go]').forEach(x=>x.onclick=()=>go(x.dataset.go));
