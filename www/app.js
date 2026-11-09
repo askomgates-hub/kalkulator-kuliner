@@ -1,8 +1,13 @@
 import { Capacitor } from '@capacitor/core';
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
+import { StatusBar, Style } from '@capacitor/status-bar';
 
 'use strict';
+if (Capacitor.isNativePlatform()) {
+  StatusBar.setBackgroundColor({ color: '#17483d' });
+  StatusBar.setStyle({ style: Style.Light });
+}
 const $=id=>document.getElementById(id),KEY='kk_v04_db',SNAP='kk_v04_snapshot';
 const today=()=>{let d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')};
 const money=n=>'Rp'+Math.round(Number(n)||0).toLocaleString('id-ID'),id=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7),safe=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
