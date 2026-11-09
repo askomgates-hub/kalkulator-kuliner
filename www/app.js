@@ -64,6 +64,78 @@ $('saveProduction').onclick=()=>{let r=db.recipes.find(r=>r.id===$('prRecipe').v
 function renderProducts(){$('productList').innerHTML=db.products.length?db.products.map(p=>`<div class="item"><div class="row"><b>${safe(p.name)}</b><b>${money(p.price)}</b></div><small>HPP/unit ${money(p.hpp)} · ${p.yield} unit · margin ${p.margin}%</small></div>`).join(''):none('Belum ada produk. Hitung HPP lalu simpan sebagai produk.')}
 $('saveFinance').onclick=()=>{let amount=val('fnAmount'),note=$('fnNote').value.trim();if(amount<=0||!note)return toast('Isi keterangan dan jumlah.');db.transactions.push({type:$('fnType').value,amount,note,date:$('fnDate').value||today()});save();$('fnNote').value=$('fnAmount').value='';toast('Transaksi tersimpan.')};
 function renderFinance(){$('financeList').innerHTML=db.transactions.length?[...db.transactions].reverse().map(t=>`<div class="item row"><div><b>${safe(t.note)}</b><small>${t.date} · ${t.type==='in'?'Pemasukan':'Pengeluaran'}</small></div><b>${t.type==='in'?'+':'−'}${money(t.amount)}</b></div>`).join(''):none('Belum ada transaksi.')}
+// ===== EDIT DAN HAPUS TRANSAKSI =====
+function renderFinance() {
+  const list = $('financeList');
+
+  if (!db.transactions.length) {
+    list.innerHTML = none('Belum ada transaksi.');
+    return;
+  }
+
+  list.innerHTML = [...db.transactions]
+    .map((t, index) => ({...t, originalIndex: index}))
+    .reverse()
+    .map(t => `
+      <div class="item">
+        <div class="row">
+          <div>
+            <b>${safe(t.note)}</b>
+            <small>${t.date} · ${t.type === 'in' ? 'Pemasukan' : 'Pengeluaran'}</small>
+          </div>
+          <b>${t.type === 'in' ? '+' : '−'}${money(t.amount)}</b>
+        </div>
+        <div class="row" style="margin-top:10px">
+          <button class="btn" data-edit-tx="${t.originalIndex}">Edit</button>
+          <button class="btn red" data-delete-tx="${t.originalIndex}">Hapus</button>
+        </div>
+      </div>
+    `).join('');
+
+  list.querySelectorAll('[data-edit-tx]').forEach(button => {
+    button.onclick = () => {
+      const index = Number(button.dataset.editTx);
+      const t = db.transactions[index];
+      if (!t) return;
+
+      const note = prompt('Keterangan transaksi:', t.note);
+      if (note === null) return;
+
+      const amount = prompt('Nominal transaksi:', t.amount);
+      if (amount === null) return;
+
+      const date = prompt('Tanggal (YYYY-MM-DD):', t.date);
+      if (date === null) return;
+
+      if (!note.trim() || Number(amount) <= 0 ||
+          !Number.isFinite(Number(amount)) ||
+          !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        return toast('Data transaksi tidak valid.');
+      }
+
+      t.note = note.trim();
+      t.amount = Number(amount);
+      t.date = date;
+
+      save();
+      toast('Transaksi berhasil diperbarui.');
+    };
+  });
+
+  list.querySelectorAll('[data-delete-tx]').forEach(button => {
+    button.onclick = () => {
+      const index = Number(button.dataset.deleteTx);
+      const t = db.transactions[index];
+      if (!t) return;
+
+      if (!confirm('Hapus transaksi ini?')) return;
+
+      db.transactions.splice(index, 1);
+      save();
+      toast('Transaksi berhasil dihapus.');
+    };
+  });
+}
 function renderReports(){let inc=sum('in'),out=sum('out');$('reportStats').innerHTML=[['Pemasukan',money(inc)],['Pengeluaran',money(out)],['Selisih kas',money(inc-out)]].map(x=>`<div class="stat"><small>${x[0]}</small><b>${x[1]}</b></div>`).join('');let p=val('bepPrice'),v=val('bepVar'),f=val('bepFixed'),u=p>v?Math.ceil(f/(p-v)):0;$('bepUnits').textContent=u.toLocaleString('id-ID')+' unit';$('bepTurn').textContent='Omzet BEP '+money(u*p);$('reportMore').innerHTML=`Bahan: <b>${db.stocks.length}</b><br>Resep: <b>${db.recipes.length}</b><br>Produk: <b>${db.products.length}</b><br>Total hasil produksi: <b>${db.productions.reduce((a,p)=>a+p.units,0)} unit</b>`}
 ['bepPrice','bepVar','bepFixed'].forEach(x=>$(x).oninput=renderReports);
 function backupStatus(){let s=localStorage.getItem(SNAP);$('backupStatus').innerHTML=s?`<b>Backup internal otomatis aktif</b><br>Terakhir diperbarui: ${new Date(JSON.parse(s).createdAt).toLocaleString('id-ID')}<br>${db.stocks.length} bahan · ${db.recipes.length} resep · ${db.transactions.length} transaksi`:'Belum ada snapshot backup.'}
