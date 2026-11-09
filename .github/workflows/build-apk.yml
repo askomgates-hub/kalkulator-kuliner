@@ -45,6 +45,7 @@ jobs:
       - name: Build APK
         run: |
           cd android
+          sed -i '/^distributionUrl=/a networkTimeout=120000' gradle/wrapper/gradle-wrapper.properties
           chmod +x gradlew
           ./gradlew assembleDebug
 
