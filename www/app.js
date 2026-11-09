@@ -321,7 +321,7 @@ $('saveRecipe').onclick = () => {
   const y = val('rcYield');
   const list = ings();
 
-  if (!name || y < 1 || !list.length) {
+  if (!name || !Number.isInteger(y) || y < 1 || !list.length) {
     return toast('Lengkapi nama, hasil, dan bahan resep.');
   }
 
