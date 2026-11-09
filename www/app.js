@@ -62,7 +62,137 @@ function renderFinance(){$('financeList').innerHTML=db.transactions.length?[...d
 function renderReports(){let inc=sum('in'),out=sum('out');$('reportStats').innerHTML=[['Pemasukan',money(inc)],['Pengeluaran',money(out)],['Selisih kas',money(inc-out)]].map(x=>`<div class="stat"><small>${x[0]}</small><b>${x[1]}</b></div>`).join('');let p=val('bepPrice'),v=val('bepVar'),f=val('bepFixed'),u=p>v?Math.ceil(f/(p-v)):0;$('bepUnits').textContent=u.toLocaleString('id-ID')+' unit';$('bepTurn').textContent='Omzet BEP '+money(u*p);$('reportMore').innerHTML=`Bahan: <b>${db.stocks.length}</b><br>Resep: <b>${db.recipes.length}</b><br>Produk: <b>${db.products.length}</b><br>Total hasil produksi: <b>${db.productions.reduce((a,p)=>a+p.units,0)} unit</b>`}
 ['bepPrice','bepVar','bepFixed'].forEach(x=>$(x).oninput=renderReports);
 function backupStatus(){let s=localStorage.getItem(SNAP);$('backupStatus').innerHTML=s?`<b>Backup internal otomatis aktif</b><br>Terakhir diperbarui: ${new Date(JSON.parse(s).createdAt).toLocaleString('id-ID')}<br>${db.stocks.length} bahan · ${db.recipes.length} resep · ${db.transactions.length} transaksi`:'Belum ada snapshot backup.'}
-function render(){renderHome();renderStockNew();renderRecipe();refreshIngredientOptions();$('prRecipe').innerHTML='<option value="">Pilih resep</option>'+db.recipes.map(r=>`<option value="${r.id}">${safe(r.name)}</option>`).join('');$('productionList').innerHTML=db.productions.length?[...db.productions].reverse().map(p=>`<div class="item row"><div><b>${safe(p.recipeName)}</b><small>${p.date} · ${p.batch} batch · ${p.units} unit</small></div><b>${money(p.cost)}</b></div>`).join(''):none('Belum ada produksi.');renderProducts();renderFinance();renderReports();preview()}
+
+// ===== MANAJEMEN RESEP =====
+let editingRecipeId = null;
+
+function resetRecipeForm() {
+  editingRecipeId = null;
+  $('rcName').value = '';
+  $('rcYield').value = 10;
+  $('recipeRows').innerHTML = '';
+  addIng();
+  calcRecipe();
+  $('saveRecipe').textContent = 'Simpan resep';
+}
+
+function editRecipe(recipeId) {
+  const r = db.recipes.find(x => x.id === recipeId);
+  if (!r) return;
+
+  editingRecipeId = recipeId;
+  $('rcName').value = r.name;
+  $('rcYield').value = r.yield;
+  $('recipeRows').innerHTML = '';
+
+  r.ingredients.forEach(i => {
+    addIng();
+    const row = $('recipeRows').lastElementChild;
+    row.querySelector('.iid').value = i.stockId;
+    row.querySelector('.iq').value = i.qty;
+  });
+
+  calcRecipe();
+  $('saveRecipe').textContent = 'Perbarui resep';
+  $('rcName').scrollIntoView({behavior:'smooth'});
+}
+
+function deleteRecipe(recipeId) {
+  const r = db.recipes.find(x => x.id === recipeId);
+  if (!r) return;
+
+  const used = db.productions.some(p =>
+    p.recipeName === r.name || p.recipeId === r.id
+  );
+
+  if (used) {
+    return toast('Resep memiliki riwayat produksi dan tidak dapat dihapus.');
+  }
+
+  if (!confirm('Hapus resep ' + r.name + '?')) return;
+
+  db.recipes = db.recipes.filter(x => x.id !== recipeId);
+  save();
+  toast('Resep berhasil dihapus.');
+}
+
+function renderRecipeNew() {
+  $('recipeList').innerHTML = db.recipes.length
+    ? db.recipes.map(r => `
+      <div class="item">
+        <div class="row">
+          <b>${safe(r.name)}</b>
+          <b>${money(costOf(r.ingredients))}/batch</b>
+        </div>
+        <small>${r.yield} unit/batch</small>
+        <div class="btnrow">
+          <button class="btn light" data-edit-recipe="${r.id}">Edit</button>
+          <button class="btn red" data-delete-recipe="${r.id}">Hapus</button>
+        </div>
+      </div>
+    `).join('')
+    : none('Belum ada resep.');
+
+  document.querySelectorAll('[data-edit-recipe]').forEach(b => {
+    b.onclick = () => editRecipe(b.dataset.editRecipe);
+  });
+
+  document.querySelectorAll('[data-delete-recipe]').forEach(b => {
+    b.onclick = () => deleteRecipe(b.dataset.deleteRecipe);
+  });
+}
+
+$('saveRecipe').onclick = () => {
+  const name = $('rcName').value.trim();
+  const y = val('rcYield');
+  const list = ings();
+
+  if (!name || y < 1 || !list.length) {
+    return toast('Lengkapi nama, hasil, dan bahan resep.');
+  }
+
+  if (db.recipes.some(r =>
+    r.id !== editingRecipeId &&
+    r.name.toLowerCase() === name.toLowerCase()
+  )) {
+    return toast('Nama resep sudah digunakan.');
+  }
+
+  if (editingRecipeId) {
+    const r = db.recipes.find(x => x.id === editingRecipeId);
+    if (!r) return toast('Resep tidak ditemukan.');
+
+    r.history = r.history || [];
+    r.history.push({
+      changedAt: new Date().toISOString(),
+      name: r.name,
+      yield: r.yield,
+      ingredients: JSON.parse(JSON.stringify(r.ingredients))
+    });
+
+    r.name = name;
+    r.yield = y;
+    r.ingredients = list;
+
+    resetRecipeForm();
+    save();
+    toast('Resep diperbarui. Versi lama tersimpan.');
+  } else {
+    db.recipes.push({
+      id: id(),
+      name,
+      yield: y,
+      ingredients: list,
+      history: []
+    });
+
+    resetRecipeForm();
+    save();
+    toast('Resep berhasil disimpan.');
+  }
+};
+
+function render(){renderHome();renderStockNew();renderRecipeNew();refreshIngredientOptions();$('prRecipe').innerHTML='<option value="">Pilih resep</option>'+db.recipes.map(r=>`<option value="${r.id}">${safe(r.name)}</option>`).join('');$('productionList').innerHTML=db.productions.length?[...db.productions].reverse().map(p=>`<div class="item row"><div><b>${safe(p.recipeName)}</b><small>${p.date} · ${p.batch} batch · ${p.units} unit</small></div><b>${money(p.cost)}</b></div>`).join(''):none('Belum ada produksi.');renderProducts();renderFinance();renderReports();preview()}
 async function download(text,name){
   try {
     if (Capacitor.isNativePlatform()) {
